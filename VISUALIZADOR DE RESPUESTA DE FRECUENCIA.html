@@ -1,0 +1,120 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2487.7">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="es"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Visualizador de Respuesta de Frecuencia&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.plot.ly/plotly-2.27.0.min.js"&gt;&lt;/script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>body { font-family: Arial, sans-serif; margin: 20px; }</p>
+<p class="p1"><span class="Apple-converted-space">    </span>#plots &gt; div { margin-bottom: 50px; }</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;h1&gt;Visualizador de Respuesta de Frecuencia&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;input type="file" id="fileInput" accept=".txt"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="plots"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="magnitudePlot"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="phasePlot"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="coherencePlot"&gt;&lt;/div&gt;</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>document.getElementById('fileInput').addEventListener('change', function(evt) {</p>
+<p class="p1"><span class="Apple-converted-space">      </span>const file = evt.target.files[0];</p>
+<p class="p1"><span class="Apple-converted-space">      </span>if (!file) return;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">      </span>const reader = new FileReader();</p>
+<p class="p1"><span class="Apple-converted-space">      </span>reader.onload = function(e) {</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const rawLines = e.target.result.split('\n');</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const dataLines = rawLines.filter(l =&gt; l.trim().length &gt; 0 &amp;&amp; !l.startsWith('#') &amp;&amp; isNaN(l.charAt(0)) === false);</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (dataLines.length === 0) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>alert("El archivo no contiene datos válidos.");</p>
+<p class="p1"><span class="Apple-converted-space">          </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const headersLine = rawLines.find(line =&gt; line.toLowerCase().includes("frequency"));</p>
+<p class="p1"><span class="Apple-converted-space">        </span>const headers = headersLine ? headersLine.trim().split(/\t|,/).map(h =&gt; h.toLowerCase()) : [];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>const freq = [], mag = [], phase = [], coh = [];</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>dataLines.forEach(line =&gt; {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const cols = line.trim().split(/\t|,/);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const f = parseFloat(cols[0]);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>const m = parseFloat(cols[1]);</p>
+<p class="p1"><span class="Apple-converted-space">          </span>if (!isNaN(f) &amp;&amp; !isNaN(m)) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>freq.push(f);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>mag.push(m);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (headers.includes("phase (degrees)") &amp;&amp; cols.length &gt; 2) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const p = parseFloat(cols[2]);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>phase.push(isNaN(p) ? null : p);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (headers.includes("coherence") &amp;&amp; cols.length &gt; 3) {</p>
+<p class="p1"><span class="Apple-converted-space">              </span>const c = parseFloat(cols[3]);</p>
+<p class="p1"><span class="Apple-converted-space">              </span>coh.push(isNaN(c) ? null : c);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>Plotly.newPlot('magnitudePlot', [{</p>
+<p class="p1"><span class="Apple-converted-space">          </span>x: freq,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>y: mag,</p>
+<p class="p1"><span class="Apple-converted-space">          </span>mode: 'lines',</p>
+<p class="p1"><span class="Apple-converted-space">          </span>name: 'Magnitud (dB)'</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}], {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>title: 'Respuesta de Frecuencia',</p>
+<p class="p1"><span class="Apple-converted-space">          </span>xaxis: { title: 'Frecuencia (Hz)', type: 'log' },</p>
+<p class="p1"><span class="Apple-converted-space">          </span>yaxis: { title: 'Magnitud (dB)' }</p>
+<p class="p1"><span class="Apple-converted-space">        </span>});</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (phase.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Plotly.newPlot('phasePlot', [{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>x: freq,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>y: phase,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>mode: 'lines',</p>
+<p class="p1"><span class="Apple-converted-space">            </span>name: 'Fase (grados)'</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}], {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>title: 'Fase',</p>
+<p class="p1"><span class="Apple-converted-space">            </span>xaxis: { title: 'Frecuencia (Hz)', type: 'log' },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>yaxis: { title: 'Fase (°)' }</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>document.getElementById('phasePlot').innerHTML = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>if (coh.length &gt; 0) {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>Plotly.newPlot('coherencePlot', [{</p>
+<p class="p1"><span class="Apple-converted-space">            </span>x: freq,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>y: coh,</p>
+<p class="p1"><span class="Apple-converted-space">            </span>mode: 'lines',</p>
+<p class="p1"><span class="Apple-converted-space">            </span>name: 'Coherencia'</p>
+<p class="p1"><span class="Apple-converted-space">          </span>}], {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>title: 'Coherencia',</p>
+<p class="p1"><span class="Apple-converted-space">            </span>xaxis: { title: 'Frecuencia (Hz)', type: 'log' },</p>
+<p class="p1"><span class="Apple-converted-space">            </span>yaxis: { title: 'Coherencia', range: [0, 1.1] }</p>
+<p class="p1"><span class="Apple-converted-space">          </span>});</p>
+<p class="p1"><span class="Apple-converted-space">        </span>} else {</p>
+<p class="p1"><span class="Apple-converted-space">          </span>document.getElementById('coherencePlot').innerHTML = '';</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">      </span>};</p>
+<p class="p1"><span class="Apple-converted-space">      </span>reader.readAsText(file);</p>
+<p class="p1"><span class="Apple-converted-space">    </span>});</p>
+<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
